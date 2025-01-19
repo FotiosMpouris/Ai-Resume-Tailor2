@@ -1,5 +1,5 @@
-streamlit
-openai==0.28.0
+streamlit>=1.18.0
+openai>=1.0.0
 pillow
 fpdf
 python-dateutil
