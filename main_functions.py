@@ -188,17 +188,19 @@ def create_pdf(content, filename_or_buffer):
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
         # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 16)  # Increased font size for the name
+        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
         header_lines = main_sections[0].split('\n')
-        header_info = "  |  ".join([line.strip() for line in header_lines if line.strip()])
-
-        # Center the header
-        pdf.cell(0, 10, header_info, border=0, ln=1, align='C')
+        
+        # Stack each header line vertically to prevent overflow
+        for line in header_lines:
+            line = line.strip()
+            if line:
+                pdf.cell(0, 7, line, border=0, ln=1, align='C')
 
         # Add a line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-        pdf.ln(10)  # Increased spacing after the header
+        pdf.ln(10)  # Spacing after the header
 
         # Process the rest of the sections
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
@@ -216,7 +218,11 @@ def create_pdf(content, filename_or_buffer):
             elif section.startswith("RELEVANT WORK EXPERIENCE"):
                 pdf.cell(0, 10, "RELEVANT WORK EXPERIENCE", ln=True, align='L')
                 pdf.set_font("DejaVu", '', 11)
-                pdf.multi_cell(effective_page_width, 7, section.split('\n', 1)[1].strip(), align='J')
+                # Split work experiences into individual entries
+                experiences = section.split('\n', 1)[1].strip().split('\n\n')
+                for exp in experiences:
+                    # Add a bullet point
+                    pdf.multi_cell(effective_page_width - 10, 7, f"• {exp.strip()}", align='J')
                 pdf.set_font("DejaVu", 'B', 12)
 
             pdf.ln(5)  # Consistent spacing between sections
