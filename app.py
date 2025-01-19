@@ -101,11 +101,11 @@ if st.session_state.generated:
             cover_letter_pdf_buffer = io.BytesIO()
 
             # Generate Resume PDF
-            create_pdf(sanitize_for_pdf(data['full_resume']), resume_pdf_buffer, pdf_type='resume')
+            create_pdf(sanitize_for_pdf(data['full_resume']), resume_pdf_buffer)
             resume_pdf_buffer.seek(0)
 
             # Generate Cover Letter PDF
-            create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer, pdf_type='cover_letter')
+            create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer)
             cover_letter_pdf_buffer.seek(0)
 
             col1, col2 = st.columns(2)
