@@ -101,11 +101,11 @@ if st.session_state.generated:
             cover_letter_pdf_buffer = io.BytesIO()
 
             # Generate Resume PDF
-            create_pdf(sanitize_for_pdf(data['full_resume']), resume_pdf_buffer)
+            create_pdf(sanitize_for_pdf(data['full_resume']), resume_pdf_buffer, pdf_type='resume')
             resume_pdf_buffer.seek(0)
 
             # Generate Cover Letter PDF
-            create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer)
+            create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer, pdf_type='cover_letter')
             cover_letter_pdf_buffer.seek(0)
 
             col1, col2 = st.columns(2)
@@ -130,7 +130,7 @@ if st.session_state.generated:
 if st.button("Start Over"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.experimental_rerun()
+    st.experimental_rerun()  # Ensure st.experimental_rerun() is correctly referenced
 
 st.markdown("---")
 st.markdown("Built with ❤️ using Streamlit and OpenAI GPT-4")
