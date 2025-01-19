@@ -187,24 +187,24 @@ def create_pdf(content, filename_or_buffer):
         # Split content into main sections
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
-        # =======================
-        # Updated Header Processing
-        # =======================
-        pdf.set_font("DejaVu", 'B', 14)  # Font for header
+        # **Modified Header Section**
+        # Set font for the header
+        pdf.set_font("DejaVu", 'B', 14)  # Adjust font size as needed
 
-        # Combine all header lines into a single line separated by " | " for clarity
-        # Adjust the separator as needed (e.g., commas, spaces)
-        header_single_line = " | ".join([line.strip() for line in main_sections[0].split('\n') if line.strip()])
+        # Extract the header content
+        header = main_sections[0].strip()
 
-        # Add the single-line header centered
-        pdf.cell(0, 10, header_single_line, border=0, ln=1, align='C')
+        # **Ensure the header fits within the effective page width**
+        # If the header is too long, you might need to adjust the font size or handle wrapping
+        # Here, we'll use a single cell with left alignment to keep it on one line
+        pdf.cell(effective_page_width, 10, header, border=0, ln=1, align='L')
 
-        # Add a horizontal line below the header
+        # Add a line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
         pdf.ln(10)  # Spacing after the header
 
-        # =======================
+        # **End of Modified Header Section**
 
         # Process the rest of the sections
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
@@ -243,6 +243,3 @@ def create_pdf(content, filename_or_buffer):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
-
-
-
