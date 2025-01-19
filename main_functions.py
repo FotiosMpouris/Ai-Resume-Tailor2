@@ -187,22 +187,33 @@ def create_pdf(content, filename_or_buffer):
         # Split content into main sections
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
-        # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 12)  # Reduced font size for the header
+        # -------------------------
+        # Modified Header Section
+        # -------------------------
+        # Set a smaller font size for the header to ensure it fits on one line
+        pdf.set_font("DejaVu", 'B', 12)  # Reduced font size from 14 to 12
 
-        # Combine header lines into a single line separated by • for clarity
-        header_lines = main_sections[0].split('\n')
-        header_combined = ' • '.join([line.strip() for line in header_lines if line.strip()])
+        # Combine all header lines into a single line separated by " | " for clarity
+        header = main_sections[0].replace('\n', ' | ')
 
-        # Add the combined header line centered
-        pdf.cell(0, 7, header_combined, border=0, ln=1, align='C')
+        # Remove "phone:" and "email:" if they exist (optional, based on GPT output)
+        header = re.sub(r'\bphone:\b', '', header, flags=re.IGNORECASE)
+        header = re.sub(r'\bemail:\b', '', header, flags=re.IGNORECASE)
 
-        # Add a line below the header
+        # Trim any extra whitespace around separators
+        header = re.sub(r'\s*\|\s*', ' | ', header).strip()
+
+        # Add the header as a single centered line
+        pdf.cell(0, 7, header, border=0, ln=1, align='C')
+
+        # Add a horizontal line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
         pdf.ln(10)  # Spacing after the header
 
+        # -------------------------
         # Process the rest of the sections
+        # -------------------------
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
         for section in main_sections[1:]:
             if section.startswith("SUMMARY"):
