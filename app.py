@@ -2,9 +2,9 @@
 
 import streamlit as st
 import openai
-from PIL import Image
 from main_functions import analyze_resume_and_job, generate_full_resume, generate_cover_letter, create_pdf
 import os
+import PyPDF2
 
 # Set up OpenAI API key from Streamlit secrets
 openai.api_key = st.secrets.get("openai_api_key")
@@ -16,16 +16,8 @@ if not openai.api_key:
 
 st.set_page_config(page_title="AI Resume Tailor 2", page_icon="📄", layout="wide")
 
-# Load and display the logo alongside the title
-col1, col2 = st.columns([1, 12])
-with col1:
-    try:
-        logo = Image.open("logo.png")
-        st.image(logo, width=100)
-    except FileNotFoundError:
-        st.warning("Logo file not found. Please ensure 'logo.png' is in the correct directory.")
-with col2:
-    st.title("AI Resume Tailor 2")
+# Set the title of the app
+st.title("AI Resume Tailor 2")
 
 # Initialize session state
 if 'generated' not in st.session_state:
@@ -49,11 +41,12 @@ def read_file(file):
     if file is not None:
         try:
             if file.type == "application/pdf":
-                import PyPDF2
                 reader = PyPDF2.PdfReader(file)
                 text = ""
                 for page in reader.pages:
-                    text += page.extract_text() + "\n"
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
                 return text
             else:
                 return file.getvalue().decode("utf-8")
@@ -116,33 +109,33 @@ if st.session_state.generated:
 
     # Generate PDF downloads
     try:
-        # Check if PDF fonts are available
-        if not (os.path.exists("DejaVuSansCondensed.ttf") and os.path.exists("DejaVuSansCondensed-Bold.ttf")):
-            st.warning("Font files missing. Please ensure 'DejaVuSansCondensed.ttf' and 'DejaVuSansCondensed-Bold.ttf' are present.")
-        else:
-            create_pdf(sanitize_for_pdf(data['full_resume']), "tailored_resume.pdf")
-            create_pdf(sanitize_for_pdf(data['cover_letter']), "cover_letter.pdf")
+        create_pdf(sanitize_for_pdf(data['full_resume']), "tailored_resume.pdf")
+        create_pdf(sanitize_for_pdf(data['cover_letter']), "cover_letter.pdf")
 
-            # Check if PDFs were created
-            if os.path.exists("tailored_resume.pdf") and os.path.exists("cover_letter.pdf"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    with open("tailored_resume.pdf", "rb") as pdf_file:
-                        PDFbyte = pdf_file.read()
-                    st.download_button(label="Download Resume as PDF",
-                                       data=PDFbyte,
-                                       file_name="tailored_resume.pdf",
-                                       mime='application/pdf')
-                
-                with col2:
-                    with open("cover_letter.pdf", "rb") as pdf_file:
-                        PDFbyte = pdf_file.read()
-                    st.download_button(label="Download Cover Letter as PDF",
-                                       data=PDFbyte,
-                                       file_name="cover_letter.pdf",
-                                       mime='application/pdf')
-            else:
-                st.error("Failed to create PDF files.")
+        # Check if PDFs were created
+        if os.path.exists("tailored_resume.pdf") and os.path.exists("cover_letter.pdf"):
+            col1, col2 = st.columns(2)
+            with col1:
+                with open("tailored_resume.pdf", "rb") as pdf_file:
+                    PDFbyte = pdf_file.read()
+                st.download_button(
+                    label="Download Resume as PDF",
+                    data=PDFbyte,
+                    file_name="tailored_resume.pdf",
+                    mime='application/pdf'
+                )
+            
+            with col2:
+                with open("cover_letter.pdf", "rb") as pdf_file:
+                    PDFbyte = pdf_file.read()
+                st.download_button(
+                    label="Download Cover Letter as PDF",
+                    data=PDFbyte,
+                    file_name="cover_letter.pdf",
+                    mime='application/pdf'
+                )
+        else:
+            st.error("Failed to create PDF files.")
     except Exception as e:
         st.error(f"An error occurred while creating PDFs: {str(e)}")
 
