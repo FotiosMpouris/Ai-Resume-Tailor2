@@ -134,20 +134,14 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
 
 class PDF(FPDF):
     def header(self):
-        # No header for resume
         pass
 
     def footer(self):
-        # No footer for resume
         pass
 
-    def multi_cell_aligned(self, w, h, txt, border=0, align='J', fill=False, ln=1):
-        # Custom method to create a multi-cell with specified alignment
-        self.multi_cell(w, h, txt, border, align, fill)
-        if ln == 1:
-            self.ln(h)
-        elif ln == 2:
-            self.ln(2*h)
+    def add_page(self, orientation=''):
+        super().add_page(orientation=orientation)
+        self._current_height = self.t_margin
 
 def create_pdf(content, filename_or_buffer):
     pdf = PDF(format='Letter')
@@ -157,7 +151,7 @@ def create_pdf(content, filename_or_buffer):
     pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
     pdf.add_font('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', uni=True)
 
-    # Determine if this is a cover letter or resume
+    # Determine if this is a cover letter
     if isinstance(filename_or_buffer, str):
         is_cover_letter = "cover_letter" in filename_or_buffer.lower()
     else:
@@ -169,107 +163,107 @@ def create_pdf(content, filename_or_buffer):
         pdf.set_margins(margin, margin, margin)
         pdf.set_auto_page_break(auto=True, margin=margin)
         
-        # Set default font
+        # Default font
         pdf.set_font("DejaVu", '', 11)
         
-        # Split content into paragraphs
-        paragraphs = content.split('\n\n')
+        # Split content into sections
+        sections = content.strip().split('\n\n')
         
-        # Process header (contact info)
-        header_lines = paragraphs[0].split('\n')
-        for line in header_lines:
-            pdf.cell(0, 6, line.strip(), ln=True, align='L')
-        pdf.ln(5)
+        # Header (contact info)
+        contact_info = sections[0].split('\n')
+        for line in contact_info:
+            pdf.cell(0, 6, line.strip(), ln=True)
+        pdf.ln(6)
         
-        # Process date and salutation
-        if len(paragraphs) > 1:
-            date_salutation = paragraphs[1].split('\n')
-            pdf.cell(0, 6, date_salutation[0], ln=True, align='L')
-            pdf.ln(3)
-            if len(date_salutation) > 1:
-                pdf.cell(0, 6, date_salutation[1], ln=True, align='L')
-        pdf.ln(5)
+        # Date
+        if len(sections) > 1:
+            date_line = sections[1].split('\n')[0]
+            pdf.cell(0, 6, date_line.strip(), ln=True)
+            pdf.ln(6)
         
-        # Process body paragraphs with proper word wrap
-        effective_width = pdf.w - 2*margin
-        for paragraph in paragraphs[2:-1]:  # Exclude signature
-            words = paragraph.split()
-            line = ""
-            for word in words:
-                test_line = f"{line} {word}".strip()
-                if pdf.get_string_width(test_line) < effective_width:
-                    line = test_line
-                else:
-                    pdf.multi_cell(0, 6, line, align='J')
-                    line = word
-            if line:
-                pdf.multi_cell(0, 6, line, align='J')
-            pdf.ln(3)
+        # Recipient/Salutation
+        if len(sections) > 2:
+            pdf.cell(0, 6, sections[2].strip(), ln=True)
+            pdf.ln(6)
         
-        # Add signature
-        if len(paragraphs) > 2:
-            signature = paragraphs[-1].split('\n')
-            pdf.ln(10)
-            for line in signature:
-                pdf.cell(0, 6, line.strip(), ln=True, align='L')
-    
+        # Body paragraphs
+        if len(sections) > 3:
+            for paragraph in sections[3:-2]:  # Exclude signature
+                pdf.multi_cell(0, 6, paragraph.strip(), align='J')
+                pdf.ln(6)
+        
+        # Closing
+        if len(sections) > 1:
+            pdf.ln(6)
+            closing_lines = sections[-2:] if len(sections) >= 2 else [sections[-1]]
+            for line in closing_lines:
+                pdf.cell(0, 6, line.strip(), ln=True)
+
     else:
         # Resume formatting
         margin = 20
         pdf.set_margins(margin, margin, margin)
-        pdf.set_auto_page_break(auto=True, margin=margin)
+        pdf.set_auto_page_break(auto=True, margin=15)
         
-        sections = content.split('\n\n')
+        # Process sections
+        sections = content.strip().split('\n\n')
         
-        # Process header
+        # Header section
         pdf.set_font("DejaVu", 'B', 12)
-        header = sections[0].replace(" | ", "  |  ")
-        pdf.cell(0, 8, header, ln=True, align='C')
+        header_parts = sections[0].split('\n')
+        
+        # Name and contact centered
+        name = header_parts[0].strip()
+        pdf.cell(0, 8, name, ln=True, align='C')
+        
+        # Address and contact info
+        pdf.set_font("DejaVu", '', 11)
+        for line in header_parts[1:]:
+            # Clean up any special characters
+            clean_line = line.strip().replace('[]', '').replace('Contact:', '')
+            if '|' in clean_line:
+                parts = [p.strip() for p in clean_line.split('|')]
+                clean_line = ' | '.join(parts)
+            pdf.cell(0, 6, clean_line, ln=True, align='C')
+        
         pdf.ln(2)
-        
-        # Add line under header
+        # Separator line
         pdf.line(margin, pdf.get_y(), pdf.w - margin, pdf.get_y())
-        pdf.ln(5)
+        pdf.ln(6)
         
-        # Process other sections
+        # Process remaining sections
         for section in sections[1:]:
             if not section.strip():
                 continue
                 
-            # Extract section title and content
+            # Split into title and content
             parts = section.split('\n', 1)
             if len(parts) < 2:
                 continue
                 
             title, content = parts
             
-            # Add section title
+            # Section title
             pdf.set_font("DejaVu", 'B', 11)
-            pdf.cell(0, 8, title, ln=True)
+            pdf.cell(0, 8, title.strip(), ln=True)
             pdf.ln(2)
             
-            # Add section content
+            # Section content
             pdf.set_font("DejaVu", '', 11)
             
-            # Handle bullet points
-            if "• " in content:
-                for line in content.split('\n'):
-                    if line.strip().startswith('• '):
-                        # Add proper bullet point
-                        pdf.cell(5, 6, '•', align='R')
-                        indented_text = line.replace('• ', '', 1)
-                        pdf.multi_cell(0, 6, indented_text, align='L')
-                    else:
-                        pdf.multi_cell(0, 6, line, align='L')
-            else:
-                pdf.multi_cell(0, 6, content, align='L')
+            # Process content paragraph by paragraph
+            paragraphs = content.strip().split('\n\n')
+            for paragraph in paragraphs:
+                # Clean up any special characters
+                clean_para = paragraph.strip().replace('[]', '')
+                pdf.multi_cell(0, 6, clean_para, align='J')
+                pdf.ln(3)
             
-            pdf.ln(5)
-            
+            pdf.ln(4)
             # Add separator line between sections
             if section != sections[-1]:
                 pdf.line(margin, pdf.get_y()-2, pdf.w - margin, pdf.get_y()-2)
-                pdf.ln(5)
+                pdf.ln(6)
 
     # Handle output
     if isinstance(filename_or_buffer, io.BytesIO):
