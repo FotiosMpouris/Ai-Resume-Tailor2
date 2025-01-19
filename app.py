@@ -5,8 +5,8 @@ from main_functions import analyze_resume_and_job, generate_full_resume, generat
 import os
 import io
 
-# Set up OpenAI API key before importing main_functions.py
-openai.api_key = st.secrets.get("OPENAI_API_KEY")
+# Set up OpenAI API key using the correct secret key name
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Verify API key is set
 if not openai.api_key:
@@ -35,32 +35,12 @@ if 'resume_data' not in st.session_state:
 def sanitize_for_pdf(text):
     return ''.join(char for char in text if ord(char) < 128)
 
-# File uploaders for Resume and Job Description
-uploaded_resume = st.file_uploader("Upload your Resume (PDF or TXT)", type=["pdf", "txt"], key="resume_upload")
-uploaded_job = st.file_uploader("Upload the Job Description (PDF or TXT)", type=["pdf", "txt"], key="job_upload")
-
-def read_file(file):
-    if file is None:
-        return ""
-    try:
-        if file.type == "application/pdf":
-            import PyPDF2
-            pdf_reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
-            return text
-        elif file.type == "text/plain":
-            return file.read().decode("utf-8")
-        else:
-            st.warning("Unsupported file type. Please upload a PDF or TXT file.")
-            return ""
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-        return ""
-
-resume = read_file(uploaded_resume)
-job_description = read_file(uploaded_job)
+# Text areas for Resume and Job Description
+col1, col2 = st.columns(2)
+with col1:
+    resume = st.text_area("Paste your Resume here", height=300)
+with col2:
+    job_description = st.text_area("Paste the Job Description here", height=300)
 
 def generate_resume():
     if resume and job_description:
@@ -70,7 +50,7 @@ def generate_resume():
                 company_name = cover_letter_info.get('Company Name', 'Company')
                 full_resume = generate_full_resume(header, summary, education, work_experience, company_name)
                 cover_letter = generate_cover_letter(resume, job_description, cover_letter_info)
-                
+
                 st.session_state.resume_data = {
                     'header': header,
                     'summary': summary,
@@ -83,30 +63,30 @@ def generate_resume():
         except Exception as e:
             st.error(f"An error occurred during generation: {str(e)}")
     else:
-        st.warning("Please upload both your resume and the job description.")
+        st.warning("Please provide both your resume and the job description.")
 
 if st.button("Analyze and Tailor Resume"):
     generate_resume()
 
 if st.session_state.generated:
     data = st.session_state.resume_data
-    
+
     st.subheader("Tailored Header")
     st.info(data['header'])
-    
+
     st.subheader("Custom Summary")
     st.success(data['summary'])
-    
+
     st.subheader("Education")
     st.write(data['education'])
-    
+
     st.subheader("Relevant Work Experience")
     st.write(data['work_experience'])
-    
+
     st.subheader("Complete Tailored Resume")
     st.text_area("Copy and edit your tailored resume:", data['full_resume'], height=400)
     st.info("Please review and edit the generated resume to ensure all information is accurate and fits on one page. You may need to adjust the work experience and education sections.")
-    
+
     st.subheader("Cover Letter")
     st.text_area("Copy your cover letter:", data['cover_letter'], height=300)
 
@@ -119,11 +99,11 @@ if st.session_state.generated:
             # Create PDFs in memory to avoid filesystem issues on Streamlit Cloud
             resume_pdf_buffer = io.BytesIO()
             cover_letter_pdf_buffer = io.BytesIO()
-            
+
             # Generate Resume PDF
             create_pdf(sanitize_for_pdf(data['full_resume']), resume_pdf_buffer)
             resume_pdf_buffer.seek(0)
-            
+
             # Generate Cover Letter PDF
             create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer)
             cover_letter_pdf_buffer.seek(0)
@@ -136,7 +116,7 @@ if st.session_state.generated:
                     file_name="tailored_resume.pdf",
                     mime='application/pdf'
                 )
-            
+
             with col2:
                 st.download_button(
                     label="Download Cover Letter as PDF",
