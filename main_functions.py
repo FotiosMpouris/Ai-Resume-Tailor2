@@ -187,20 +187,24 @@ def create_pdf(content, filename_or_buffer):
         # Split content into main sections
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
-        # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
-        header_lines = main_sections[0].split('\n')
-        
-        # Stack each header line vertically to prevent overflow
-        for line in header_lines:
-            line = line.strip()
-            if line:
-                pdf.cell(0, 7, line, border=0, ln=1, align='C')
+        # =======================
+        # Updated Header Processing
+        # =======================
+        pdf.set_font("DejaVu", 'B', 14)  # Font for header
 
-        # Add a line below the header
+        # Combine all header lines into a single line separated by " | " for clarity
+        # Adjust the separator as needed (e.g., commas, spaces)
+        header_single_line = " | ".join([line.strip() for line in main_sections[0].split('\n') if line.strip()])
+
+        # Add the single-line header centered
+        pdf.cell(0, 10, header_single_line, border=0, ln=1, align='C')
+
+        # Add a horizontal line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
         pdf.ln(10)  # Spacing after the header
+
+        # =======================
 
         # Process the rest of the sections
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
