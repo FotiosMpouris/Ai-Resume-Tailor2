@@ -148,7 +148,7 @@ class PDF(FPDF):
         elif ln == 2:
             self.ln(2*h)
 
-def create_pdf(content, filename):
+def create_pdf(content, filename_or_buffer):
     pdf = PDF(format='Letter')
     pdf.add_page()
 
@@ -156,7 +156,14 @@ def create_pdf(content, filename):
     pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
     pdf.add_font('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', uni=True)
 
-    if filename == "cover_letter.pdf":
+    if isinstance(filename_or_buffer, str) and filename_or_buffer.endswith(".pdf"):
+        # Saving to a file
+        filename = filename_or_buffer
+    else:
+        # Saving to a buffer
+        filename = None
+
+    if filename_or_buffer == "cover_letter.pdf" or (isinstance(filename_or_buffer, io.BytesIO) and filename_or_buffer.name == "cover_letter.pdf"):
         # Cover letter specific formatting
         left_margin = 25.4  # 1 inch
         right_margin = 25.4  # 1 inch
@@ -196,7 +203,7 @@ def create_pdf(content, filename):
         for paragraph in paragraphs[2:]:
             pdf.multi_cell(effective_page_width, 5, paragraph.strip(), align='J')
             pdf.ln(5)
-           
+
     else:
         # Existing resume PDF generation code (with modifications)
         left_margin = 20
@@ -264,4 +271,7 @@ def create_pdf(content, filename):
                 pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
                 pdf.ln(3)
 
-    pdf.output(filename)
+    if filename:
+        pdf.output(filename)
+    else:
+        pdf.output(filename_or_buffer)
