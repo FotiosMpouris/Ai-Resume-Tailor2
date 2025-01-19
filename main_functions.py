@@ -170,10 +170,68 @@ def create_pdf(content, filename_or_buffer):
         is_cover_letter = False
 
     if is_cover_letter:
-        # [Cover Letter Formatting Remains Unchanged]
-        ...
+        # === Cover Letter Specific Formatting ===
+
+        # Set margins: 1 inch on all sides
+        left_margin = 25.4  # 1 inch
+        right_margin = 25.4  # 1 inch
+        top_margin = 25.4  # 1 inch
+        pdf.set_margins(left_margin, top_margin, right_margin)
+
+        pdf.set_auto_page_break(auto=True, margin=25.4)  # 1 inch bottom margin
+
+        # Calculate effective page width (accounting for margins)
+        effective_page_width = pdf.w - left_margin - right_margin
+
+        # Set font for contact information
+        pdf.set_font("DejaVu", 'B', 12)  # Reduced font size for header
+
+        # Split cover letter into paragraphs
+        paragraphs = content.split('\n\n')
+
+        # === Process Contact Information ===
+        contact_info = paragraphs[0].split('\n')
+        for line in contact_info:
+            line = line.strip()
+            if line:
+                pdf.cell(0, 7, line, border=0, ln=1, align='C')  # Centered alignment with reduced line height
+
+        pdf.ln(5)  # Small spacing after contact info
+
+        # === Process Date and Salutation ===
+        if len(paragraphs) > 1:
+            date_salutation = paragraphs[1].split('\n')
+            if len(date_salutation) >= 2:
+                # Date on the right
+                pdf.set_font("DejaVu", '', 11)  # Regular font for date
+                pdf.cell(effective_page_width, 5, date_salutation[0].strip(), align='R', ln=True)
+                pdf.ln(5)
+                # Salutation on the left
+                pdf.set_font("DejaVu", '', 11)  # Regular font for salutation
+                pdf.cell(0, 5, date_salutation[1].strip(), ln=True, align='L')
+            pdf.ln(5)
+
+        # === Process the Body of the Cover Letter ===
+        pdf.set_font("DejaVu", '', 11)  # Regular font for body text
+        for paragraph in paragraphs[2:]:
+            pdf.multi_cell(effective_page_width, 7, paragraph.strip(), align='J')
+            pdf.ln(3)  # Reduced spacing between paragraphs
+
+        # === Add Closing Section ===
+        if len(paragraphs) > 3:
+            closing = paragraphs[3].strip()
+            if closing:
+                pdf.set_font("DejaVu", '', 11)
+                pdf.multi_cell(effective_page_width, 7, closing, align='J')
+                pdf.ln(5)
+        
+        # Optionally, add a signature line
+        # pdf.cell(0, 5, "Sincerely,", ln=True, align='L')
+        # pdf.ln(10)
+        # pdf.cell(0, 5, cover_letter_info['Full Name'], ln=True, align='L')
+
     else:
-        # Resume specific formatting
+        # === Resume Specific Formatting (Unchanged) ===
         left_margin = 20
         right_margin = 20
         top_margin = 20
@@ -200,7 +258,7 @@ def create_pdf(content, filename_or_buffer):
         # Add a line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-        pdf.ln(10)  # Spacing after the header
+        pdf.ln(10)  # Increased spacing after the header
 
         # Process the rest of the sections
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
@@ -239,3 +297,4 @@ def create_pdf(content, filename_or_buffer):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
+
