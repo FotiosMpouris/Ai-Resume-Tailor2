@@ -177,9 +177,8 @@ def create_pdf(content, filename):
     pdf = PDF(format='Letter')
     pdf.add_page()
     
-    # Add Unicode fonts (regular and bold)
-    pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
-    pdf.add_font('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', uni=True)
+    # Use default fonts
+    pdf.set_font("Helvetica", '', 12)
     
     if filename == "cover_letter.pdf":
         # Cover letter specific formatting
@@ -192,9 +191,6 @@ def create_pdf(content, filename):
         
         # Calculate effective page width (accounting for margins)
         effective_page_width = pdf.w - left_margin - right_margin
-        
-        # Set font for body text
-        pdf.set_font("DejaVu", '', 11)
         
         # Split cover letter into paragraphs
         paragraphs = content.split('\n\n')
@@ -238,7 +234,7 @@ def create_pdf(content, filename):
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
         
         # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 12)  # Set to bold, slightly larger than body text
+        pdf.set_font("Helvetica", 'B', 12)  # Set to bold, slightly larger than body text
         header_lines = main_sections[0].split('\n')
         header_info = "  ".join([line.split(": ", 1)[-1] for line in header_lines if ": " in line])
         
@@ -252,7 +248,7 @@ def create_pdf(content, filename):
             font_size = 12
             while header_width > effective_page_width and font_size > 9:
                 font_size -= 0.5
-                pdf.set_font("DejaVu", 'B', font_size)  # Keep bold
+                pdf.set_font("Helvetica", 'B', font_size)  # Keep bold
                 header_width = pdf.get_string_width(header_info)
         
         # Calculate the center position and shift it slightly to the left
@@ -269,21 +265,21 @@ def create_pdf(content, filename):
         pdf.ln(3)
         
         # Process the rest of the sections
-        pdf.set_font("DejaVu", 'B', 11)  # Set to bold for section headers
+        pdf.set_font("Helvetica", 'B', 11)  # Set to bold for section headers
         for section in main_sections[1:]:
             if section.startswith("SUMMARY"):
                 pdf.cell(0, 5, "SUMMARY", ln=True)
-                pdf.set_font("DejaVu", '', 11)  # Reset to regular font
+                pdf.set_font("Helvetica", '', 11)  # Reset to regular font
                 pdf.multi_cell(effective_page_width, 5, section.split('\n', 1)[1].strip(), align='J')
             elif section.startswith("EDUCATION"):
-                pdf.set_font("DejaVu", 'B', 11)
+                pdf.set_font("Helvetica", 'B', 11)
                 pdf.cell(0, 5, "EDUCATION", ln=True)
-                pdf.set_font("DejaVu", '', 11)
+                pdf.set_font("Helvetica", '', 11)
                 pdf.multi_cell(effective_page_width, 5, section.split('\n', 1)[1].strip(), align='J')
             elif section.startswith("RELEVANT WORK EXPERIENCE"):
-                pdf.set_font("DejaVu", 'B', 11)
+                pdf.set_font("Helvetica", 'B', 11)
                 pdf.cell(0, 5, "RELEVANT WORK EXPERIENCE", ln=True)
-                pdf.set_font("DejaVu", '', 11)
+                pdf.set_font("Helvetica", '', 11)
                 work_exps = section.split('\n')[1:]
                 for exp in work_exps:
                     pdf.multi_cell(effective_page_width, 5, f"- {exp.strip()}", align='J')
