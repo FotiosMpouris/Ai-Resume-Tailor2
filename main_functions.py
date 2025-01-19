@@ -164,7 +164,7 @@ def create_pdf(content, filename_or_buffer):
     elif isinstance(filename_or_buffer, io.BytesIO):
         # Saving to a buffer
         filename = None
-        is_cover_letter = False  # Assuming buffer is for resume
+        is_cover_letter = filename_or_buffer.getbuffer().nbytes > 0 and filename_or_buffer.tell() == 0 and filename_or_buffer.name == "cover_letter.pdf"
     else:
         filename = None
         is_cover_letter = False
@@ -205,7 +205,7 @@ def create_pdf(content, filename_or_buffer):
                 # Date on the right
                 pdf.set_font("DejaVu", '', 11)  # Regular font for date
                 pdf.cell(effective_page_width, 5, date_salutation[0].strip(), align='R', ln=True)
-                pdf.ln(5)
+                pdf.ln(3)  # Reduced spacing
                 # Salutation on the left
                 pdf.set_font("DejaVu", '', 11)  # Regular font for salutation
                 pdf.cell(0, 5, date_salutation[1].strip(), ln=True, align='L')
@@ -214,24 +214,18 @@ def create_pdf(content, filename_or_buffer):
         # === Process the Body of the Cover Letter ===
         pdf.set_font("DejaVu", '', 11)  # Regular font for body text
         for paragraph in paragraphs[2:]:
-            pdf.multi_cell(effective_page_width, 7, paragraph.strip(), align='J')
+            pdf.multi_cell(effective_page_width, 6, paragraph.strip(), align='J')  # Reduced line height
             pdf.ln(3)  # Reduced spacing between paragraphs
 
-        # === Add Closing Section ===
-        if len(paragraphs) > 3:
-            closing = paragraphs[3].strip()
-            if closing:
-                pdf.set_font("DejaVu", '', 11)
-                pdf.multi_cell(effective_page_width, 7, closing, align='J')
-                pdf.ln(5)
-        
         # Optionally, add a signature line
+        # pdf.set_font("DejaVu", 'B', 11)
         # pdf.cell(0, 5, "Sincerely,", ln=True, align='L')
         # pdf.ln(10)
+        # pdf.set_font("DejaVu", '', 11)
         # pdf.cell(0, 5, cover_letter_info['Full Name'], ln=True, align='L')
 
     else:
-        # === Resume Specific Formatting (Unchanged) ===
+        # === Resume Specific Formatting ===
         left_margin = 20
         right_margin = 20
         top_margin = 20
@@ -246,47 +240,47 @@ def create_pdf(content, filename_or_buffer):
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
         # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
+        pdf.set_font("DejaVu", 'B', 12)  # Further reduced font size for the header
         header_lines = main_sections[0].split('\n')
-        
+
         # Stack each header line vertically to prevent overflow
         for line in header_lines:
             line = line.strip()
             if line:
-                pdf.cell(0, 7, line, border=0, ln=1, align='C')
+                pdf.cell(0, 6, line, border=0, ln=1, align='C')  # Reduced line height
 
         # Add a line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-        pdf.ln(10)  # Increased spacing after the header
+        pdf.ln(8)  # Reduced spacing after the header
 
         # Process the rest of the sections
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
         for section in main_sections[1:]:
             if section.startswith("SUMMARY"):
-                pdf.cell(0, 10, "SUMMARY", ln=True, align='L')
+                pdf.cell(0, 8, "SUMMARY", ln=True, align='L')  # Reduced line height
                 pdf.set_font("DejaVu", '', 11)
-                pdf.multi_cell(effective_page_width, 7, section.split('\n', 1)[1].strip(), align='J')
+                pdf.multi_cell(effective_page_width, 6, section.split('\n', 1)[1].strip(), align='J')  # Reduced line height
                 pdf.set_font("DejaVu", 'B', 12)
             elif section.startswith("EDUCATION"):
-                pdf.cell(0, 10, "EDUCATION", ln=True, align='L')
+                pdf.cell(0, 8, "EDUCATION", ln=True, align='L')
                 pdf.set_font("DejaVu", '', 11)
-                pdf.multi_cell(effective_page_width, 7, section.split('\n', 1)[1].strip(), align='J')
+                pdf.multi_cell(effective_page_width, 6, section.split('\n', 1)[1].strip(), align='J')
                 pdf.set_font("DejaVu", 'B', 12)
             elif section.startswith("RELEVANT WORK EXPERIENCE"):
-                pdf.cell(0, 10, "RELEVANT WORK EXPERIENCE", ln=True, align='L')
+                pdf.cell(0, 8, "RELEVANT WORK EXPERIENCE", ln=True, align='L')
                 pdf.set_font("DejaVu", '', 11)
                 # Split work experiences into individual entries
                 experiences = section.split('\n', 1)[1].strip().split('\n\n')
                 for exp in experiences:
                     # Add a bullet point
-                    pdf.multi_cell(effective_page_width - 10, 7, f"• {exp.strip()}", align='J')
+                    pdf.multi_cell(effective_page_width - 10, 6, f"• {exp.strip()}", align='J')
                 pdf.set_font("DejaVu", 'B', 12)
 
-            pdf.ln(5)  # Consistent spacing between sections
+            pdf.ln(3)  # Reduced spacing between sections
             pdf.set_line_width(0.2)
             pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-            pdf.ln(5)
+            pdf.ln(3)  # Reduced spacing after the line
 
     # Handle PDF Output
     if filename_or_buffer is not None:
@@ -297,4 +291,3 @@ def create_pdf(content, filename_or_buffer):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
-
