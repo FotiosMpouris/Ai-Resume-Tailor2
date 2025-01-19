@@ -2,6 +2,7 @@ import openai
 import re
 from fpdf import FPDF
 from datetime import date
+import io  # Ensure io is imported
 
 def analyze_resume_and_job(resume, job_description):
     system_message = """
@@ -163,7 +164,14 @@ def create_pdf(content, filename_or_buffer):
         # Saving to a buffer
         filename = None
 
-    if filename_or_buffer == "cover_letter.pdf" or (isinstance(filename_or_buffer, io.BytesIO) and filename_or_buffer.name == "cover_letter.pdf"):
+    if isinstance(filename_or_buffer, str):
+        is_cover_letter = filename_or_buffer == "cover_letter.pdf"
+    elif isinstance(filename_or_buffer, io.BytesIO):
+        is_cover_letter = False  # Assuming no name attribute for in-memory buffers
+    else:
+        is_cover_letter = False
+
+    if is_cover_letter:
         # Cover letter specific formatting
         left_margin = 25.4  # 1 inch
         right_margin = 25.4  # 1 inch
@@ -205,7 +213,7 @@ def create_pdf(content, filename_or_buffer):
             pdf.ln(5)
 
     else:
-        # Existing resume PDF generation code (with modifications)
+        # Resume specific formatting
         left_margin = 20
         right_margin = 20
         top_margin = 20
