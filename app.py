@@ -3,7 +3,7 @@ import openai
 from PIL import Image
 from main_functions import analyze_resume_and_job, generate_full_resume, generate_cover_letter, create_pdf
 import os
-import io
+import io  # Ensure io is imported
 
 # Set up OpenAI API key using the correct secret key name
 openai.api_key = st.secrets["OPENAI_API_KEY"]
