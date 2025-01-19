@@ -1,1 +1,6 @@
 streamlit
+openai
+pillow
+fpdf
+python-dateutil
+PyPDF2
