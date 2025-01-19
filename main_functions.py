@@ -152,142 +152,128 @@ class PDF(FPDF):
 def create_pdf(content, filename_or_buffer):
     pdf = PDF(format='Letter')
     pdf.add_page()
-
-    # Add Unicode fonts (regular and bold)
+    
+    # Add Unicode fonts
     pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
     pdf.add_font('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', uni=True)
 
-    if isinstance(filename_or_buffer, str) and filename_or_buffer.endswith(".pdf"):
-        # Saving to a file
-        filename = filename_or_buffer
-        is_cover_letter = filename == "cover_letter.pdf"
-    elif isinstance(filename_or_buffer, io.BytesIO):
-        # Saving to a buffer
-        filename = None
-        is_cover_letter = filename_or_buffer.getbuffer().nbytes > 0 and filename_or_buffer.tell() == 0 and filename_or_buffer.name == "cover_letter.pdf"
+    # Determine if this is a cover letter or resume
+    if isinstance(filename_or_buffer, str):
+        is_cover_letter = "cover_letter" in filename_or_buffer.lower()
     else:
-        filename = None
         is_cover_letter = False
 
     if is_cover_letter:
-        # === Cover Letter Specific Formatting ===
-
-        # Set margins: 1 inch on all sides
-        left_margin = 25.4  # 1 inch
-        right_margin = 25.4  # 1 inch
-        top_margin = 25.4  # 1 inch
-        pdf.set_margins(left_margin, top_margin, right_margin)
-
-        pdf.set_auto_page_break(auto=True, margin=25.4)  # 1 inch bottom margin
-
-        # Calculate effective page width (accounting for margins)
-        effective_page_width = pdf.w - left_margin - right_margin
-
-        # Set font for contact information
-        pdf.set_font("DejaVu", 'B', 12)  # Reduced font size for header
-
-        # Split cover letter into paragraphs
+        # Cover letter formatting
+        margin = 25.4  # 1 inch margins
+        pdf.set_margins(margin, margin, margin)
+        pdf.set_auto_page_break(auto=True, margin=margin)
+        
+        # Set default font
+        pdf.set_font("DejaVu", '', 11)
+        
+        # Split content into paragraphs
         paragraphs = content.split('\n\n')
-
-        # === Process Contact Information ===
-        contact_info = paragraphs[0].split('\n')
-        for line in contact_info:
-            line = line.strip()
-            if line:
-                pdf.cell(0, 7, line, border=0, ln=1, align='C')  # Centered alignment with reduced line height
-
-        pdf.ln(5)  # Small spacing after contact info
-
-        # === Process Date and Salutation ===
+        
+        # Process header (contact info)
+        header_lines = paragraphs[0].split('\n')
+        for line in header_lines:
+            pdf.cell(0, 6, line.strip(), ln=True, align='L')
+        pdf.ln(5)
+        
+        # Process date and salutation
         if len(paragraphs) > 1:
             date_salutation = paragraphs[1].split('\n')
-            if len(date_salutation) >= 2:
-                # Date on the right
-                pdf.set_font("DejaVu", '', 11)  # Regular font for date
-                pdf.cell(effective_page_width, 5, date_salutation[0].strip(), align='R', ln=True)
-                pdf.ln(3)  # Reduced spacing
-                # Salutation on the left
-                pdf.set_font("DejaVu", '', 11)  # Regular font for salutation
-                pdf.cell(0, 5, date_salutation[1].strip(), ln=True, align='L')
-            pdf.ln(5)
-
-        # === Process the Body of the Cover Letter ===
-        pdf.set_font("DejaVu", '', 11)  # Regular font for body text
-        for paragraph in paragraphs[2:]:
-            pdf.multi_cell(effective_page_width, 6, paragraph.strip(), align='J')  # Reduced line height
-            pdf.ln(3)  # Reduced spacing between paragraphs
-
-        # Optionally, add a signature line
-        # pdf.set_font("DejaVu", 'B', 11)
-        # pdf.cell(0, 5, "Sincerely,", ln=True, align='L')
-        # pdf.ln(10)
-        # pdf.set_font("DejaVu", '', 11)
-        # pdf.cell(0, 5, cover_letter_info['Full Name'], ln=True, align='L')
-
-    else:
-        # === Resume Specific Formatting ===
-        left_margin = 20
-        right_margin = 20
-        top_margin = 20
-        pdf.set_margins(left_margin, top_margin, right_margin)
-
-        pdf.set_auto_page_break(auto=True, margin=15)  # Bottom margin
-
-        # Calculate effective page width (accounting for margins)
-        effective_page_width = pdf.w - left_margin - right_margin
-
-        # Split content into main sections
-        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
-
-        # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 12)  # Further reduced font size for the header
-        header_lines = main_sections[0].split('\n')
-
-        # Stack each header line vertically to prevent overflow
-        for line in header_lines:
-            line = line.strip()
+            pdf.cell(0, 6, date_salutation[0], ln=True, align='L')
+            pdf.ln(3)
+            if len(date_salutation) > 1:
+                pdf.cell(0, 6, date_salutation[1], ln=True, align='L')
+        pdf.ln(5)
+        
+        # Process body paragraphs with proper word wrap
+        effective_width = pdf.w - 2*margin
+        for paragraph in paragraphs[2:-1]:  # Exclude signature
+            words = paragraph.split()
+            line = ""
+            for word in words:
+                test_line = f"{line} {word}".strip()
+                if pdf.get_string_width(test_line) < effective_width:
+                    line = test_line
+                else:
+                    pdf.multi_cell(0, 6, line, align='J')
+                    line = word
             if line:
-                pdf.cell(0, 6, line, border=0, ln=1, align='C')  # Reduced line height
+                pdf.multi_cell(0, 6, line, align='J')
+            pdf.ln(3)
+        
+        # Add signature
+        if len(paragraphs) > 2:
+            signature = paragraphs[-1].split('\n')
+            pdf.ln(10)
+            for line in signature:
+                pdf.cell(0, 6, line.strip(), ln=True, align='L')
+    
+    else:
+        # Resume formatting
+        margin = 20
+        pdf.set_margins(margin, margin, margin)
+        pdf.set_auto_page_break(auto=True, margin=margin)
+        
+        sections = content.split('\n\n')
+        
+        # Process header
+        pdf.set_font("DejaVu", 'B', 12)
+        header = sections[0].replace(" | ", "  |  ")
+        pdf.cell(0, 8, header, ln=True, align='C')
+        pdf.ln(2)
+        
+        # Add line under header
+        pdf.line(margin, pdf.get_y(), pdf.w - margin, pdf.get_y())
+        pdf.ln(5)
+        
+        # Process other sections
+        for section in sections[1:]:
+            if not section.strip():
+                continue
+                
+            # Extract section title and content
+            parts = section.split('\n', 1)
+            if len(parts) < 2:
+                continue
+                
+            title, content = parts
+            
+            # Add section title
+            pdf.set_font("DejaVu", 'B', 11)
+            pdf.cell(0, 8, title, ln=True)
+            pdf.ln(2)
+            
+            # Add section content
+            pdf.set_font("DejaVu", '', 11)
+            
+            # Handle bullet points
+            if "• " in content:
+                for line in content.split('\n'):
+                    if line.strip().startswith('• '):
+                        # Add proper bullet point
+                        pdf.cell(5, 6, '•', align='R')
+                        indented_text = line.replace('• ', '', 1)
+                        pdf.multi_cell(0, 6, indented_text, align='L')
+                    else:
+                        pdf.multi_cell(0, 6, line, align='L')
+            else:
+                pdf.multi_cell(0, 6, content, align='L')
+            
+            pdf.ln(5)
+            
+            # Add separator line between sections
+            if section != sections[-1]:
+                pdf.line(margin, pdf.get_y()-2, pdf.w - margin, pdf.get_y()-2)
+                pdf.ln(5)
 
-        # Add a line below the header
-        pdf.set_line_width(0.5)
-        pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-        pdf.ln(8)  # Reduced spacing after the header
-
-        # Process the rest of the sections
-        pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
-        for section in main_sections[1:]:
-            if section.startswith("SUMMARY"):
-                pdf.cell(0, 8, "SUMMARY", ln=True, align='L')  # Reduced line height
-                pdf.set_font("DejaVu", '', 11)
-                pdf.multi_cell(effective_page_width, 6, section.split('\n', 1)[1].strip(), align='J')  # Reduced line height
-                pdf.set_font("DejaVu", 'B', 12)
-            elif section.startswith("EDUCATION"):
-                pdf.cell(0, 8, "EDUCATION", ln=True, align='L')
-                pdf.set_font("DejaVu", '', 11)
-                pdf.multi_cell(effective_page_width, 6, section.split('\n', 1)[1].strip(), align='J')
-                pdf.set_font("DejaVu", 'B', 12)
-            elif section.startswith("RELEVANT WORK EXPERIENCE"):
-                pdf.cell(0, 8, "RELEVANT WORK EXPERIENCE", ln=True, align='L')
-                pdf.set_font("DejaVu", '', 11)
-                # Split work experiences into individual entries
-                experiences = section.split('\n', 1)[1].strip().split('\n\n')
-                for exp in experiences:
-                    # Add a bullet point
-                    pdf.multi_cell(effective_page_width - 10, 6, f"• {exp.strip()}", align='J')
-                pdf.set_font("DejaVu", 'B', 12)
-
-            pdf.ln(3)  # Reduced spacing between sections
-            pdf.set_line_width(0.2)
-            pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-            pdf.ln(3)  # Reduced spacing after the line
-
-    # Handle PDF Output
-    if filename_or_buffer is not None:
-        if isinstance(filename_or_buffer, io.BytesIO):
-            # Output as string and encode to bytes
-            pdf_str = pdf.output(dest='S').encode('latin1')
-            filename_or_buffer.write(pdf_str)
-        else:
-            # Assume it's a filename
-            pdf.output(filename_or_buffer)
+    # Handle output
+    if isinstance(filename_or_buffer, io.BytesIO):
+        pdf_str = pdf.output(dest='S').encode('latin1')
+        filename_or_buffer.write(pdf_str)
+    else:
+        pdf.output(filename_or_buffer)
