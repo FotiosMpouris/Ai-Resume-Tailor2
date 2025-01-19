@@ -187,25 +187,15 @@ def create_pdf(content, filename_or_buffer):
         # Split content into main sections
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
-        # Process the header section (name and contact info)
-        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
+        # Process the header section (name, telephone, address, email)
+        pdf.set_font("DejaVu", 'B', 12)  # Reduced font size for the header
+
+        # Combine header lines into a single line separated by • for clarity
         header_lines = main_sections[0].split('\n')
+        header_combined = ' • '.join([line.strip() for line in header_lines if line.strip()])
 
-        # Ensure there are exactly two lines in the header
-        if len(header_lines) > 2:
-            header_lines = header_lines[:2]
-        elif len(header_lines) < 2:
-            # If less than two lines, pad with empty strings
-            header_lines += [''] * (2 - len(header_lines))
-
-        for line in header_lines:
-            line = line.strip()
-            if line:
-                # Use multi_cell with effective_page_width to prevent overflow
-                pdf.multi_cell(effective_page_width, 7, line, border=0, align='C')
-            else:
-                # If the line is empty, add vertical space
-                pdf.ln(7)
+        # Add the combined header line centered
+        pdf.cell(0, 7, header_combined, border=0, ln=1, align='C')
 
         # Add a line below the header
         pdf.set_line_width(0.5)
