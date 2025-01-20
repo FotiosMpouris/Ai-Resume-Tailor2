@@ -3,7 +3,7 @@ import re
 from fpdf import FPDF
 from datetime import date
 import io
-import os  # To handle file paths
+import os
 
 def analyze_resume_and_job(resume, job_description):
     system_message = """
@@ -288,8 +288,9 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
     # Handle PDF Output
     if filename_or_buffer is not None:
         if isinstance(filename_or_buffer, io.BytesIO):
-            # Output to buffer
-            pdf.output(filename_or_buffer)
+            # Output as string and encode to bytes
+            pdf_str = pdf.output(dest='S').encode('latin1')
+            filename_or_buffer.write(pdf_str)
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
@@ -298,36 +299,36 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
 if __name__ == "__main__":
     # Sample resume and job description
     sample_resume = """
-    John Doe
-    1234 Elm Street, Anytown, USA
-    johndoe@example.com | (123) 456-7890
+John Doe
+1234 Elm Street, Anytown, USA
+johndoe@example.com | (123) 456-7890
 
-    PROFESSIONAL SUMMARY
-    Experienced software developer with expertise in Python, Java, and cloud technologies. Proven track record of delivering high-quality software solutions on time and within budget.
+PROFESSIONAL SUMMARY
+Experienced software developer with expertise in Python, Java, and cloud technologies. Proven track record of delivering high-quality software solutions on time and within budget.
 
-    EDUCATION
-    B.Sc. in Computer Science, University of Somewhere, 2015 - 2019
+EDUCATION
+B.Sc. in Computer Science, University of Somewhere, 2015 - 2019
 
-    RELEVANT WORK EXPERIENCE
-    Software Developer at TechCorp (2019 - Present)
-    - Developed and maintained web applications using Python and Django.
-    - Collaborated with cross-functional teams to define project requirements.
-    - Implemented CI/CD pipelines to streamline deployment processes.
+RELEVANT WORK EXPERIENCE
+Software Developer at TechCorp (2019 - Present)
+- Developed and maintained web applications using Python and Django.
+- Collaborated with cross-functional teams to define project requirements.
+- Implemented CI/CD pipelines to streamline deployment processes.
 
-    Junior Developer at WebSolutions (2017 - 2019)
-    - Assisted in the development of client websites using JavaScript and React.
-    - Participated in code reviews and provided constructive feedback.
-    - Managed database operations and ensured data integrity.
-    """
+Junior Developer at WebSolutions (2017 - 2019)
+- Assisted in the development of client websites using JavaScript and React.
+- Participated in code reviews and provided constructive feedback.
+- Managed database operations and ensured data integrity.
+"""
 
     sample_job_description = """
-    We are seeking a skilled Software Developer with experience in Python and cloud platforms. The ideal candidate will have a strong background in web application development, familiarity with CI/CD practices, and the ability to work collaboratively in a fast-paced environment.
+We are seeking a skilled Software Developer with experience in Python and cloud platforms. The ideal candidate will have a strong background in web application development, familiarity with CI/CD practices, and the ability to work collaboratively in a fast-paced environment.
 
-    Responsibilities:
-    - Develop and maintain web applications using Python frameworks.
-    - Implement and manage CI/CD pipelines.
-    - Collaborate with design and product teams to deliver high-quality software.
-    """
+Responsibilities:
+- Develop and maintain web applications using Python frameworks.
+- Implement and manage CI/CD pipelines.
+- Collaborate with design and product teams to deliver high-quality software.
+"""
 
     analysis = analyze_resume_and_job(sample_resume, sample_job_description)
     if analysis:
@@ -335,10 +336,26 @@ if __name__ == "__main__":
 
         # Generate Resume
         full_resume = generate_full_resume(header, summary, education, work_experience)
+        
+        # Create Resume PDF (Save to file)
         create_pdf(full_resume, "resume.pdf", is_cover_letter=False)
         print("Resume PDF generated successfully.")
 
+        # Alternatively, create Resume PDF (Save to BytesIO buffer)
+        resume_buffer = io.BytesIO()
+        create_pdf(full_resume, resume_buffer, is_cover_letter=False)
+        # You can now use resume_buffer.getvalue() to access the PDF bytes
+        print("Resume PDF written to BytesIO buffer successfully.")
+
         # Generate Cover Letter
         cover_letter = generate_cover_letter(full_resume, sample_job_description, cover_letter_info)
+        
+        # Create Cover Letter PDF (Save to file)
         create_pdf(cover_letter, "cover_letter.pdf", is_cover_letter=True)
         print("Cover Letter PDF generated successfully.")
+
+        # Alternatively, create Cover Letter PDF (Save to BytesIO buffer)
+        cover_letter_buffer = io.BytesIO()
+        create_pdf(cover_letter, cover_letter_buffer, is_cover_letter=True)
+        # You can now use cover_letter_buffer.getvalue() to access the PDF bytes
+        print("Cover Letter PDF written to BytesIO buffer successfully.")
