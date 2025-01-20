@@ -187,36 +187,22 @@ def create_pdf(content, filename_or_buffer):
         # Split content into main sections
         main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
-        # -------------------------
-        # Modified Header Section
-        # -------------------------
-        # Set a smaller font size for the header to ensure it fits on one line
-        pdf.set_font("DejaVu", 'B', 10)  # Reduced font size from 12 to 10
+        # Process the header section (name, telephone, address, email)
+        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
+        header_lines = main_sections[0].split('\n')
+        
+        # Stack each header line vertically to prevent overflow
+        for line in header_lines:
+            line = line.strip()
+            if line:
+                pdf.cell(0, 7, line, border=0, ln=1, align='C')
 
-        # Combine all header lines into a single line separated by " | " for clarity
-        header = main_sections[0].replace('\n', ' | ')
-
-        # Remove "phone:" and "email:" if they exist (optional, based on GPT output)
-        header = re.sub(r'\bphone:\b', '', header, flags=re.IGNORECASE)
-        header = re.sub(r'\bemail:\b', '', header, flags=re.IGNORECASE)
-
-        # Trim any extra whitespace around separators
-        header = re.sub(r'\s*\|\s*', ' | ', header).strip()
-
-        # Ensure there are no characters to the left of the name "Fotios"
-        header = re.sub(r'^.*?(Fotios)', r'\1', header)
-
-        # Add the header as a single centered line
-        pdf.cell(0, 7, header, border=0, ln=1, align='C')
-
-        # Add a horizontal line below the header
+        # Add a line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-        pdf.ln(5)  # Reduced spacing after the header
+        pdf.ln(10)  # Spacing after the header
 
-        # -------------------------
         # Process the rest of the sections
-        # -------------------------
         pdf.set_font("DejaVu", 'B', 12)  # Consistent font size for section headers
         for section in main_sections[1:]:
             if section.startswith("SUMMARY"):
@@ -253,3 +239,6 @@ def create_pdf(content, filename_or_buffer):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
+
+
+
