@@ -4,6 +4,7 @@ from fpdf import FPDF
 from datetime import date
 import io
 import os
+import textwrap
 
 def analyze_resume_and_job(resume, job_description):
     system_message = """
@@ -14,6 +15,7 @@ def analyze_resume_and_job(resume, job_description):
     4. Extract and summarize at least three relevant work experiences for this job, focusing on the most recent or most applicable positions. Each experience should be described in detail.
     5. Extract the full name, address, email, and phone number for use in a cover letter.
     6. Extract the company name from the job description for use in the cover letter greeting.
+    7. Ensure all summaries and descriptions are written in the first person.
     """
 
     user_message = f"""
@@ -56,7 +58,9 @@ def analyze_resume_and_job(resume, job_description):
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
-            ]
+            ],
+            temperature=0.3,  # Lower temperature for more deterministic output
+            max_tokens=1500
         )
     except Exception as e:
         print(f"OpenAI API request failed: {e}")
@@ -130,11 +134,11 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
 
     system_message = """
     You are an expert cover letter writer with years of experience in HR and recruitment. Your task is to create a compelling, personalized cover letter based on the candidate's resume, the job description provided, and the specific candidate information given. The cover letter should:
-    1. Highlight the candidate's most relevant skills and experiences for the specific job
-    2. Show enthusiasm for the position and company
-    3. Be concise, typically not exceeding one page
-    4. Encourage the employer to review the attached resume and consider the candidate for an interview
-    5. Do not include any salutation, contact information, or closing in the body of the letter
+    1. Highlight the candidate's most relevant skills and experiences for the specific job.
+    2. Show enthusiasm for the position and company.
+    3. Be concise, typically not exceeding one page.
+    4. Encourage the employer to review the attached resume and consider the candidate for an interview.
+    5. Use a first-person narrative, referring to the candidate directly.
     """
 
     user_message = f"""
@@ -143,6 +147,9 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
     Candidate Information:
     Full Name: {cover_letter_info.get('Full Name', '')}
     Company: {cover_letter_info.get('Company Name', '')}
+    Address: {cover_letter_info.get('Address', '')}
+    Email: {cover_letter_info.get('Email', '')}
+    Phone: {cover_letter_info.get('Phone', '')}
 
     Resume:
     {resume}
@@ -159,7 +166,9 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
-            ]
+            ],
+            temperature=0.3,  # Lower temperature for consistency
+            max_tokens=1000
         )
     except Exception as e:
         print(f"OpenAI API request failed: {e}")
@@ -196,6 +205,7 @@ class PDF(FPDF):
 
     def chapter_title(self, title):
         self.set_font('DejaVu', 'B', 14)
+        self.set_text_color(0, 0, 0)
         self.cell(0, 10, title, ln=True, align='L')
         self.ln(2)
 
@@ -230,6 +240,13 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
 
     if is_cover_letter:
         # Cover Letter Formatting
+        # Adjust margins for cover letter
+        left_margin = 25
+        right_margin = 25
+        top_margin = 25
+        pdf.set_margins(left_margin, top_margin, right_margin)
+        pdf.set_auto_page_break(auto=True, margin=15)
+        
         # Split the content into lines
         lines = content.split('\n')
         for line in lines:
@@ -242,8 +259,8 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
             pdf.ln(1)
     else:
         # Resume Formatting
-        left_margin = 20
-        right_margin = 20
+        left_margin = 15
+        right_margin = 15
         top_margin = 20
         pdf.set_margins(left_margin, top_margin, right_margin)
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -256,15 +273,15 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
             return
 
         # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 16)  # Increased font size for the header
+        pdf.set_font("DejaVu", 'B', 20)  # Increased font size for the header
         header_lines = main_sections[0].split('\n')
         
-        # Center the header
+        # Center the header and ensure it wraps properly
         for line in header_lines:
             line = line.strip()
             if line:
-                pdf.cell(0, 10, line, border=0, ln=1, align='C')
-
+                pdf.multi_cell(0, 10, line, align='C')
+        
         pdf.ln(5)  # Spacing after the header
 
         # Process the rest of the sections
@@ -304,21 +321,21 @@ John Doe
 johndoe@example.com | (123) 456-7890
 
 PROFESSIONAL SUMMARY
-Experienced software developer with expertise in Python, Java, and cloud technologies. Proven track record of delivering high-quality software solutions on time and within budget.
+I am an experienced software developer with expertise in Python, Java, and cloud technologies. I have a proven track record of delivering high-quality software solutions on time and within budget.
 
 EDUCATION
 B.Sc. in Computer Science, University of Somewhere, 2015 - 2019
 
 RELEVANT WORK EXPERIENCE
 Software Developer at TechCorp (2019 - Present)
-- Developed and maintained web applications using Python and Django.
-- Collaborated with cross-functional teams to define project requirements.
-- Implemented CI/CD pipelines to streamline deployment processes.
+- I developed and maintained web applications using Python and Django.
+- I collaborated with cross-functional teams to define project requirements.
+- I implemented CI/CD pipelines to streamline deployment processes.
 
 Junior Developer at WebSolutions (2017 - 2019)
-- Assisted in the development of client websites using JavaScript and React.
-- Participated in code reviews and provided constructive feedback.
-- Managed database operations and ensured data integrity.
+- I assisted in the development of client websites using JavaScript and React.
+- I participated in code reviews and provided constructive feedback.
+- I managed database operations and ensured data integrity.
 """
 
     sample_job_description = """
