@@ -191,35 +191,20 @@ def create_pdf(content, filename_or_buffer):
         # Modified Header Section
         # -------------------------
         # Set a smaller font size for the header to ensure it fits on one line
-        pdf.set_font("DejaVu", 'B', 12)  # Reduced font size from 14 to 12
+        pdf.set_font("DejaVu", 'B', 10)  # Reduced font size from 12 to 10
 
         # Combine all header lines into a single line separated by " | " for clarity
         header = main_sections[0].replace('\n', ' | ')
 
-        # Remove "phone:" and "email:" if they exist
+        # Remove "phone:" and "email:" if they exist (optional, based on GPT output)
         header = re.sub(r'\bphone:\b', '', header, flags=re.IGNORECASE)
         header = re.sub(r'\bemail:\b', '', header, flags=re.IGNORECASE)
 
         # Trim any extra whitespace around separators
         header = re.sub(r'\s*\|\s*', ' | ', header).strip()
 
-        # Measure the width of the header text
-        header_width = pdf.get_string_width(header) + 6  # Adding some padding
-
-        # Check if header width exceeds effective page width
-        if header_width > effective_page_width:
-            # Reduce font size until it fits
-            font_size = 12
-            while header_width > effective_page_width and font_size > 8:
-                font_size -= 0.5
-                pdf.set_font("DejaVu", 'B', font_size)
-                header_width = pdf.get_string_width(header) + 6
-            if font_size == 8 and header_width > effective_page_width:
-                # If it still doesn't fit, truncate the header
-                while header_width > effective_page_width and len(header) > 0:
-                    header = header[:-1]
-                    header_width = pdf.get_string_width(header + '...') + 6
-                header += '...'
+        # Ensure there are no characters to the left of the name "Fotios"
+        header = re.sub(r'^.*?(Fotios)', r'\1', header)
 
         # Add the header as a single centered line
         pdf.cell(0, 7, header, border=0, ln=1, align='C')
@@ -227,7 +212,7 @@ def create_pdf(content, filename_or_buffer):
         # Add a horizontal line below the header
         pdf.set_line_width(0.5)
         pdf.line(left_margin, pdf.get_y(), pdf.w - right_margin, pdf.get_y())
-        pdf.ln(10)  # Spacing after the header
+        pdf.ln(5)  # Reduced spacing after the header
 
         # -------------------------
         # Process the rest of the sections
