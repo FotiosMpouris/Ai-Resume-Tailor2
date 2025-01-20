@@ -4,7 +4,6 @@ from fpdf import FPDF
 from datetime import date
 import io
 import os
-import textwrap
 
 def analyze_resume_and_job(resume, job_description):
     system_message = """
