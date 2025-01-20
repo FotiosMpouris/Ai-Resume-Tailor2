@@ -1,3 +1,5 @@
+# app.py
+
 import streamlit as st
 import openai
 from PIL import Image
@@ -46,10 +48,13 @@ def generate_resume():
     if resume and job_description:
         try:
             with st.spinner("Analyzing and tailoring your resume..."):
-                header, summary, education, work_experience, cover_letter_info = analyze_resume_and_job(resume, job_description)
-                company_name = cover_letter_info.get('Company Name', 'Company')
-                full_resume = generate_full_resume(header, summary, education, work_experience, company_name)
-                cover_letter = generate_cover_letter(resume, job_description, cover_letter_info)
+                analysis = analyze_resume_and_job(resume, job_description)
+                if analysis is None:
+                    st.error("Failed to analyze the resume and job description.")
+                    return
+                header, summary, education, work_experience, cover_letter_info = analysis
+                full_resume = generate_full_resume(header, summary, education, work_experience)
+                cover_letter = generate_cover_letter(full_resume, job_description, cover_letter_info)
 
                 st.session_state.resume_data = {
                     'header': header,
@@ -105,7 +110,7 @@ if st.session_state.generated:
             resume_pdf_buffer.seek(0)
 
             # Generate Cover Letter PDF
-            create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer)
+            create_pdf(sanitize_for_pdf(data['cover_letter']), cover_letter_pdf_buffer, is_cover_letter=True)
             cover_letter_pdf_buffer.seek(0)
 
             col1, col2 = st.columns(2)
@@ -130,7 +135,7 @@ if st.session_state.generated:
 if st.button("Start Over"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.experimental_rerun()  # Ensure st.experimental_rerun() is correctly referenced
+    st.rerun()  # Updated from st.experimental_rerun() to st.rerun()
 
 st.markdown("---")
 st.markdown("Built with ❤️ using Streamlit and OpenAI GPT-4")
