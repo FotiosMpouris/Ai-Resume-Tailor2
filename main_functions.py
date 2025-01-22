@@ -252,6 +252,9 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         lines = content.split('\n')
         for line in lines:
             line = line.strip()
+            if not line:
+                pdf.ln(2)  # Add space for empty lines
+                continue
             if line.startswith('Dear') or line.startswith('Sincerely'):
                 pdf.set_font("DejaVu", 'B', 12)
             else:
@@ -297,12 +300,13 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
             name = header_parts[0] if header_parts else ""
             contact_info = header_text.replace(name, "").strip()
 
-        # Add the name
-        pdf.multi_cell(0, 10, name, align='C')
+        # Add the name (Left-aligned instead of Center)
+        pdf.set_font("DejaVu", 'B', 20)
+        pdf.multi_cell(0, 10, name, align='L')
 
-        # Add the contact information
+        # Add the contact information (Left-aligned)
         pdf.set_font("DejaVu", '', 12)  # Smaller font for contact info
-        pdf.multi_cell(0, 10, contact_info, align='C')
+        pdf.multi_cell(0, 10, contact_info, align='L')
 
         pdf.ln(5)  # Spacing after the header
 
@@ -333,3 +337,4 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
+
