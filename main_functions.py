@@ -252,13 +252,20 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         
         # Split the content into lines
         lines = content.split('\n')
-        for line in lines:
+        for idx, line in enumerate(lines):
             line = line.strip()
+            if idx < 4:
+                # Center-align the first four lines: Name, Address, Phone, Email
+                align = 'C'
+            elif line.startswith('Dear') or line.startswith('Sincerely'):
+                align = 'L'
+            else:
+                align = 'L'
             if line.startswith('Dear') or line.startswith('Sincerely'):
                 pdf.set_font("DejaVu", 'B', 12)
             else:
                 pdf.set_font("DejaVu", '', 12)
-            pdf.multi_cell(0, 7, line, align='L')
+            pdf.multi_cell(0, 7, line, align=align)
             pdf.ln(1)
     else:
         # Resume Formatting
