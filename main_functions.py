@@ -9,14 +9,14 @@ import os
 
 def analyze_resume_and_job(resume, job_description):
     system_message = """
-    You are an expert resume analyst and career advisor with decades of experience in HR and recruitment across various industries. Your task is to analyze the provided resume and job description, then provide:
-    1. A tailored header for the resume, including the candidate's name and key contact information.
-    2. A custom summary (3-4 sentences) that highlights the candidate's most relevant skills and experiences for this specific job.
-    3. Extract and summarize the candidate's education information.
-    4. Extract and summarize at least three relevant work experiences for this job, focusing on the most recent or most applicable positions. Each experience should be described in detail.
-    5. Extract the full name, address, email, and phone number for use in a cover letter.
-    6. Extract the company name from the job description for use in the cover letter greeting.
-    7. Ensure all summaries and descriptions are written in the first person.
+    You are an esteemed resume analyst and career advisor with decades of experience in HR and recruitment across various industries. Your expertise rivals that of a Pulitzer Prize-winning journalist, ensuring that all written content is of the highest professional standard. Your task is to analyze the provided resume and job description, then provide:
+    1. A meticulously crafted header for the resume, including the candidate's name and key contact information.
+    2. A compelling custom summary (3-4 sentences) that eloquently highlights the candidate's most relevant skills and experiences for this specific job.
+    3. A concise and well-structured summary of the candidate's education information.
+    4. Detailed summaries of at least three relevant work experiences for this job, focusing on the most recent or most applicable positions. Each experience should be described with precision and professionalism.
+    5. Extraction of the full name, address, email, and phone number for use in a cover letter.
+    6. Extraction of the company name from the job description for use in the cover letter greeting.
+    7. Ensure all summaries and descriptions are written in the first person with impeccable grammar and style.
     """
 
     user_message = f"""
@@ -134,12 +134,12 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
     today = date.today().strftime("%B %d, %Y")
 
     system_message = """
-    You are an expert cover letter writer with years of experience in HR and recruitment. Your task is to create a compelling, personalized cover letter based on the candidate's resume, the job description provided, and the specific candidate information given. The cover letter should:
-    1. Highlight the candidate's most relevant skills and experiences for the specific job.
-    2. Show enthusiasm for the position and company.
-    3. Be concise, typically not exceeding one page.
+    You are an esteemed cover letter writer with extensive experience in HR and recruitment. Your writing is of the highest professional standard, comparable to that of a Pulitzer Prize-winning journalist. Your task is to create a compelling, personalized cover letter based on the candidate's resume, the job description provided, and the specific candidate information given. The cover letter should:
+    1. Highlight the candidate's most relevant skills and experiences for the specific job with eloquence and precision.
+    2. Demonstrate genuine enthusiasm for the position and the company.
+    3. Be concise, typically not exceeding one page, while maintaining depth and clarity.
     4. Encourage the employer to review the attached resume and consider the candidate for an interview.
-    5. Use a first-person narrative, referring to the candidate directly.
+    5. Use a first-person narrative, referring to the candidate directly with impeccable grammar and style.
     """
 
     user_message = f"""
@@ -179,10 +179,7 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
 
     # Format the cover letter with the correct header, date, and salutation
     formatted_cover_letter = f"""\
-{cover_letter_info.get('Full Name', '')}
-{cover_letter_info.get('Address', '')}
-{cover_letter_info.get('Phone', '')}
-{cover_letter_info.get('Email', '')}
+{cover_letter_info.get('Full Name', '')}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
 {today}
 
@@ -240,8 +237,24 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         return
 
     if is_cover_letter:
-        # [Cover letter formatting remains unchanged]
-        ...
+        # Cover Letter Formatting
+        # Adjust margins for cover letter
+        left_margin = 25
+        right_margin = 25
+        top_margin = 25
+        pdf.set_margins(left_margin, top_margin, right_margin)
+        pdf.set_auto_page_break(auto=True, margin=15)
+        
+        # Split the content into lines
+        lines = content.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('Dear') or line.startswith('Sincerely'):
+                pdf.set_font("DejaVu", 'B', 12)
+            else:
+                pdf.set_font("DejaVu", '', 12)
+            pdf.multi_cell(0, 7, line, align='L')
+            pdf.ln(1)
     else:
         # Resume Formatting
         left_margin = 15
@@ -258,27 +271,35 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
             return
 
         # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
+        pdf.set_font("DejaVu", 'B', 20)  # Increased font size for the header
+        header_text = main_sections[0].strip()
 
-        # Combine all header lines into a single string
-        header_combined = ' | '.join([line.strip() for line in main_sections[0].split('\n') if line.strip()])
-
-        # Split the combined header into two lines: Name and Contact Info
-        header_parts = header_combined.split('|', 1)  # Split into two parts at the first '|'
-
-        if len(header_parts) == 2:
-            name, contact_info = header_parts
+        # Assuming header_text contains Name, Address, Phone, Email separated by line breaks or commas
+        # Split by line breaks or commas
+        if '\n' in header_text:
+            header_parts = [part.strip() for part in header_text.split('\n') if part.strip()]
         else:
+            header_parts = [part.strip() for part in header_text.split(',') if part.strip()]
+
+        if len(header_parts) >= 4:
             name = header_parts[0]
-            contact_info = ''
+            address = header_parts[1]
+            phone = header_parts[2]
+            email = header_parts[3]
 
-        # Add the name (first line)
-        pdf.multi_cell(0, 7, name.strip(), align='C')
+            # Combine address, phone, and email into a single line with even spacing
+            contact_info = f"{address}      {phone}      {email}"
+        else:
+            # Fallback if not enough parts are found
+            name = header_parts[0] if header_parts else ""
+            contact_info = header_text.replace(name, "").strip()
 
-        # Add the contact information (second line)
-        if contact_info:
-            pdf.set_font("DejaVu", '', 12)  # Slightly smaller font for contact info
-            pdf.multi_cell(0, 7, contact_info.strip(), align='C')
+        # Add the name
+        pdf.multi_cell(0, 10, name, align='C')
+
+        # Add the contact information
+        pdf.set_font("DejaVu", '', 12)  # Smaller font for contact info
+        pdf.multi_cell(0, 10, contact_info, align='C')
 
         pdf.ln(5)  # Spacing after the header
 
@@ -300,3 +321,12 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
                     if exp:
                         pdf.add_bullet_point(exp)
 
+    # Handle PDF Output
+    if filename_or_buffer is not None:
+        if isinstance(filename_or_buffer, io.BytesIO):
+            # Output as string and encode to bytes
+            pdf_str = pdf.output(dest='S').encode('latin1')
+            filename_or_buffer.write(pdf_str)
+        else:
+            # Assume it's a filename
+            pdf.output(filename_or_buffer)
