@@ -1,5 +1,3 @@
-# main_functions.py
-
 import openai
 import re
 from fpdf import FPDF
