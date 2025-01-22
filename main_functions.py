@@ -16,7 +16,9 @@ def analyze_resume_and_job(resume, job_description):
     4. Detailed summaries of at least three relevant work experiences for this job, focusing on the most recent or most applicable positions. Each experience should be described with precision and professionalism.
     5. Extraction of the full name, address, email, and phone number for use in a cover letter.
     6. Extraction of the company name from the job description for use in the cover letter greeting.
-    7. **Ensure that the "Applications and Games" section is given special emphasis. The list under this section should be highlighted and elaborated upon in both the resume and the cover letter.**
+    7. Special attention to the "Applications and Games" section in the resume:
+       - Briefly mention the listed applications and games in the resume.
+       - Provide more in-depth coverage of these items in the cover letter.
     8. Ensure all summaries and descriptions are written in the first person with impeccable grammar and style.
     """
 
@@ -47,7 +49,7 @@ def analyze_resume_and_job(resume, job_description):
     [Summarized relevant work experience 3]
 
     APPLICATIONS AND GAMES:
-    [Detailed list and description]
+    [Brief mention of applications and games]
 
     COVER LETTER INFO:
     Full Name: [Extracted full name]
@@ -65,7 +67,7 @@ def analyze_resume_and_job(resume, job_description):
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,  # Lower temperature for more deterministic output
-            max_tokens=2000  # Increased tokens to accommodate additional section
+            max_tokens=2000
         )
     except Exception as e:
         print(f"OpenAI API request failed: {e}")
@@ -81,7 +83,7 @@ def process_gpt_output(output):
         'SUMMARY:',
         'EDUCATION:',
         'RELEVANT WORK EXPERIENCE:',
-        'APPLICATIONS AND GAMES:',  # Added new section
+        'APPLICATIONS AND GAMES:',
         'COVER LETTER INFO:'
     ]
     
@@ -116,11 +118,12 @@ def process_gpt_output(output):
         sections.get('HEADER', '').strip(),
         sections.get('SUMMARY', '').strip(),
         sections.get('EDUCATION', '').strip(),
-        sections.get('RELEVANT WORK EXPERIENCE', '').strip() + "\n" + sections.get('APPLICATIONS AND GAMES', '').strip(),  # Combined work experience with applications and games
+        sections.get('RELEVANT WORK EXPERIENCE', '').strip(),
+        sections.get('APPLICATIONS AND GAMES', '').strip(),
         cover_letter_info
     )
 
-def generate_full_resume(header, summary, education, work_experience):
+def generate_full_resume(header, summary, education, work_experience, applications_and_games):
     full_resume = f"""
 {header}
 
@@ -132,16 +135,19 @@ EDUCATION
 
 RELEVANT WORK EXPERIENCE
 {work_experience}
+
+APPLICATIONS AND GAMES
+{applications_and_games}
 """
     return full_resume.strip()
 
-def generate_cover_letter(resume, job_description, cover_letter_info):
+def generate_cover_letter(resume, job_description, cover_letter_info, applications_and_games):
     today = date.today().strftime("%B %d, %Y")
 
     system_message = """
     You are an esteemed cover letter writer with extensive experience in HR and recruitment. Your writing is of the highest professional standard, comparable to that of a Pulitzer Prize-winning journalist. Your task is to create a compelling, personalized cover letter based on the candidate's resume, the job description provided, and the specific candidate information given. The cover letter should:
     1. Highlight the candidate's most relevant skills and experiences for the specific job with eloquence and precision.
-    2. **Emphasize the candidate's contributions in the "Applications and Games" section of their resume.**
+    2. Provide an in-depth discussion of the candidate's applications and games projects, demonstrating their relevance to the position.
     3. Demonstrate genuine enthusiasm for the position and the company.
     4. Be concise, typically not exceeding one page, while maintaining depth and clarity.
     5. Encourage the employer to review the attached resume and consider the candidate for an interview.
@@ -164,6 +170,9 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
     Job Description:
     {job_description}
 
+    Applications and Games:
+    {applications_and_games}
+
     Provide only the body of the cover letter, without any salutation or closing.
     """
 
@@ -175,7 +184,7 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,  # Lower temperature for consistency
-            max_tokens=1000
+            max_tokens=1500
         )
     except Exception as e:
         print(f"OpenAI API request failed: {e}")
@@ -183,9 +192,12 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
 
     cover_letter_content = response.choices[0].message.content.strip()
 
-    # **Fix Alignment: Removed excessive em spaces to align the name properly**
+    # Format the cover letter with the correct header, date, and salutation
     formatted_cover_letter = f"""\
 {cover_letter_info.get('Full Name', '')}
+{cover_letter_info.get('Address', '')}
+{cover_letter_info.get('Phone', '')}
+{cover_letter_info.get('Email', '')}
 
 {today}
 
@@ -270,13 +282,13 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         pdf.set_auto_page_break(auto=True, margin=15)
 
         # Split content into main sections
-        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
+        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE|APPLICATIONS AND GAMES)', content)
 
         if not main_sections:
             print("No content to add to the PDF.")
             return
 
-        # Process the header section (name, telephone, address, email)
+        # Process the header section (name, address, phone, email)
         pdf.set_font("DejaVu", 'B', 20)  # Increased font size for the header
         header_text = main_sections[0].strip()
 
@@ -326,6 +338,11 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
                     exp = exp.strip()
                     if exp:
                         pdf.add_bullet_point(exp)
+            elif section.startswith("APPLICATIONS AND GAMES"):
+                pdf.chapter_title("APPLICATIONS AND GAMES")
+                applications_text = section.split('\n', 1)[1].strip()
+                # Briefly mention applications and games in the resume
+                pdf.chapter_body(applications_text, align='L')  # Left align for brief mention
 
     # Handle PDF Output
     if filename_or_buffer is not None:
@@ -336,3 +353,47 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
+
+# Example usage (for testing purposes)
+if __name__ == "__main__":
+    sample_resume = """
+    John Doe
+    North Reading, MA
+    (123) 456-7890
+    johndoe@example.com
+
+    SUMMARY
+    Experienced software developer with a strong background in developing scalable applications and engaging games.
+
+    EDUCATION
+    B.S. in Computer Science, XYZ University, 2015
+
+    RELEVANT WORK EXPERIENCE
+    Senior Developer at ABC Corp (2018-2023)
+    - Led a team of developers in creating enterprise-level software solutions.
+    
+    Software Engineer at DEF Inc (2015-2018)
+    - Developed and maintained web applications, improving performance by 30%.
+
+    APPLICATIONS AND GAMES
+    - Developed "FunQuest," an interactive educational game for children.
+    - Created "TaskMaster," a productivity application used by over 10,000 users.
+    """
+
+    sample_job_description = """
+    We are seeking a Senior Software Developer with experience in building scalable applications and developing engaging user experiences. The ideal candidate will have a strong background in team leadership and project management.
+    """
+
+    header, summary, education, work_experience, applications_and_games, cover_info = analyze_resume_and_job(sample_resume, sample_job_description)
+    full_resume = generate_full_resume(header, summary, education, work_experience, applications_and_games)
+    cover_letter = generate_cover_letter(full_resume, sample_job_description, cover_info, applications_and_games)
+
+    # Create resume PDF
+    resume_buffer = io.BytesIO()
+    create_pdf(full_resume, resume_buffer, is_cover_letter=False)
+
+    # Create cover letter PDF
+    cover_letter_buffer = io.BytesIO()
+    create_pdf(cover_letter, cover_letter_buffer, is_cover_letter=True)
+
+    print("PDFs generated successfully.")
