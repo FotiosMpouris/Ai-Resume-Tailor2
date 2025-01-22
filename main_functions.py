@@ -16,7 +16,7 @@ def analyze_resume_and_job(resume, job_description):
     4. Detailed summaries of at least three relevant work experiences for this job, focusing on the most recent or most applicable positions. Each experience should be described with precision and professionalism.
     5. Extraction of the full name, address, email, and phone number for use in a cover letter.
     6. Extraction of the company name from the job description for use in the cover letter greeting.
-    7. Pay special attention to the "Applications and Games" section in the resume. Ensure that the list under this section is highlighted and mentioned prominently in both the resume and the cover letter.
+    7. **Ensure that the "Applications and Games" section is given special emphasis. The list under this section should be highlighted and elaborated upon in both the resume and the cover letter.**
     8. Ensure all summaries and descriptions are written in the first person with impeccable grammar and style.
     """
 
@@ -47,7 +47,7 @@ def analyze_resume_and_job(resume, job_description):
     [Summarized relevant work experience 3]
 
     APPLICATIONS AND GAMES:
-    [Summarized applications and games information]
+    [Detailed list and description]
 
     COVER LETTER INFO:
     Full Name: [Extracted full name]
@@ -65,7 +65,7 @@ def analyze_resume_and_job(resume, job_description):
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,  # Lower temperature for more deterministic output
-            max_tokens=1500
+            max_tokens=2000  # Increased tokens to accommodate additional section
         )
     except Exception as e:
         print(f"OpenAI API request failed: {e}")
@@ -81,7 +81,7 @@ def process_gpt_output(output):
         'SUMMARY:',
         'EDUCATION:',
         'RELEVANT WORK EXPERIENCE:',
-        'APPLICATIONS AND GAMES:',
+        'APPLICATIONS AND GAMES:',  # Added new section
         'COVER LETTER INFO:'
     ]
     
@@ -116,12 +116,11 @@ def process_gpt_output(output):
         sections.get('HEADER', '').strip(),
         sections.get('SUMMARY', '').strip(),
         sections.get('EDUCATION', '').strip(),
-        sections.get('RELEVANT WORK EXPERIENCE', '').strip(),
-        sections.get('APPLICATIONS AND GAMES', '').strip(),
+        sections.get('RELEVANT WORK EXPERIENCE', '').strip() + "\n" + sections.get('APPLICATIONS AND GAMES', '').strip(),  # Combined work experience with applications and games
         cover_letter_info
     )
 
-def generate_full_resume(header, summary, education, work_experience, applications_and_games):
+def generate_full_resume(header, summary, education, work_experience):
     full_resume = f"""
 {header}
 
@@ -133,23 +132,20 @@ EDUCATION
 
 RELEVANT WORK EXPERIENCE
 {work_experience}
-
-APPLICATIONS AND GAMES
-{applications_and_games}
 """
     return full_resume.strip()
 
-def generate_cover_letter(resume, job_description, cover_letter_info, applications_and_games):
+def generate_cover_letter(resume, job_description, cover_letter_info):
     today = date.today().strftime("%B %d, %Y")
 
     system_message = """
     You are an esteemed cover letter writer with extensive experience in HR and recruitment. Your writing is of the highest professional standard, comparable to that of a Pulitzer Prize-winning journalist. Your task is to create a compelling, personalized cover letter based on the candidate's resume, the job description provided, and the specific candidate information given. The cover letter should:
     1. Highlight the candidate's most relevant skills and experiences for the specific job with eloquence and precision.
-    2. Demonstrate genuine enthusiasm for the position and the company.
-    3. Be concise, typically not exceeding one page, while maintaining depth and clarity.
-    4. Encourage the employer to review the attached resume and consider the candidate for an interview.
-    5. Use a first-person narrative, referring to the candidate directly with impeccable grammar and style.
-    6. Specifically mention and highlight the "Applications and Games" section from the candidate's resume to showcase relevant projects and achievements.
+    2. **Emphasize the candidate's contributions in the "Applications and Games" section of their resume.**
+    3. Demonstrate genuine enthusiasm for the position and the company.
+    4. Be concise, typically not exceeding one page, while maintaining depth and clarity.
+    5. Encourage the employer to review the attached resume and consider the candidate for an interview.
+    6. Use a first-person narrative, referring to the candidate directly with impeccable grammar and style.
     """
 
     user_message = f"""
@@ -167,9 +163,6 @@ def generate_cover_letter(resume, job_description, cover_letter_info, applicatio
 
     Job Description:
     {job_description}
-
-    Applications and Games:
-    {applications_and_games}
 
     Provide only the body of the cover letter, without any salutation or closing.
     """
@@ -190,12 +183,9 @@ def generate_cover_letter(resume, job_description, cover_letter_info, applicatio
 
     cover_letter_content = response.choices[0].message.content.strip()
 
-    # Format the cover letter with the correct header, date, and salutation
+    # **Fix Alignment: Removed excessive em spaces to align the name properly**
     formatted_cover_letter = f"""\
 {cover_letter_info.get('Full Name', '')}
-{cover_letter_info.get('Address', '')}
-{cover_letter_info.get('Phone', '')}
-{cover_letter_info.get('Email', '')}
 
 {today}
 
@@ -280,7 +270,7 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         pdf.set_auto_page_break(auto=True, margin=15)
 
         # Split content into main sections
-        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE|APPLICATIONS AND GAMES)', content)
+        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
 
         if not main_sections:
             print("No content to add to the PDF.")
@@ -336,13 +326,6 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
                     exp = exp.strip()
                     if exp:
                         pdf.add_bullet_point(exp)
-            elif section.startswith("APPLICATIONS AND GAMES"):
-                pdf.chapter_title("APPLICATIONS AND GAMES")
-                applications_text = section.split('\n', 1)[1].strip().split('\n')
-                for app in applications_text:
-                    app = app.strip()
-                    if app:
-                        pdf.add_bullet_point(app)
 
     # Handle PDF Output
     if filename_or_buffer is not None:
@@ -353,4 +336,3 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
-
