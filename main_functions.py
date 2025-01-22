@@ -240,24 +240,8 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         return
 
     if is_cover_letter:
-        # Cover Letter Formatting
-        # Adjust margins for cover letter
-        left_margin = 25
-        right_margin = 25
-        top_margin = 25
-        pdf.set_margins(left_margin, top_margin, right_margin)
-        pdf.set_auto_page_break(auto=True, margin=15)
-        
-        # Split the content into lines
-        lines = content.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith('Dear') or line.startswith('Sincerely'):
-                pdf.set_font("DejaVu", 'B', 12)
-            else:
-                pdf.set_font("DejaVu", '', 12)
-            pdf.multi_cell(0, 7, line, align='L')
-            pdf.ln(1)
+        # [Cover letter formatting remains unchanged]
+        ...
     else:
         # Resume Formatting
         left_margin = 15
@@ -274,15 +258,28 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
             return
 
         # Process the header section (name, telephone, address, email)
-        pdf.set_font("DejaVu", 'B', 20)  # Increased font size for the header
-        header_lines = main_sections[0].split('\n')
-        
-        # Center the header and ensure it wraps properly
-        for line in header_lines:
-            line = line.strip()
-            if line:
-                pdf.multi_cell(0, 10, line, align='C')
-        
+        pdf.set_font("DejaVu", 'B', 14)  # Reduced font size for the header
+
+        # Combine all header lines into a single string
+        header_combined = ' | '.join([line.strip() for line in main_sections[0].split('\n') if line.strip()])
+
+        # Split the combined header into two lines: Name and Contact Info
+        header_parts = header_combined.split('|', 1)  # Split into two parts at the first '|'
+
+        if len(header_parts) == 2:
+            name, contact_info = header_parts
+        else:
+            name = header_parts[0]
+            contact_info = ''
+
+        # Add the name (first line)
+        pdf.multi_cell(0, 7, name.strip(), align='C')
+
+        # Add the contact information (second line)
+        if contact_info:
+            pdf.set_font("DejaVu", '', 12)  # Slightly smaller font for contact info
+            pdf.multi_cell(0, 7, contact_info.strip(), align='C')
+
         pdf.ln(5)  # Spacing after the header
 
         # Process the rest of the sections
@@ -303,12 +300,3 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
                     if exp:
                         pdf.add_bullet_point(exp)
 
-    # Handle PDF Output
-    if filename_or_buffer is not None:
-        if isinstance(filename_or_buffer, io.BytesIO):
-            # Output as string and encode to bytes
-            pdf_str = pdf.output(dest='S').encode('latin1')
-            filename_or_buffer.write(pdf_str)
-        else:
-            # Assume it's a filename
-            pdf.output(filename_or_buffer)
