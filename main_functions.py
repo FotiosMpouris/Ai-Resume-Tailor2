@@ -16,7 +16,8 @@ def analyze_resume_and_job(resume, job_description):
     4. Detailed summaries of at least three relevant work experiences for this job, focusing on the most recent or most applicable positions. Each experience should be described with precision and professionalism.
     5. Extraction of the full name, address, email, and phone number for use in a cover letter.
     6. Extraction of the company name from the job description for use in the cover letter greeting.
-    7. Ensure all summaries and descriptions are written in the first person with impeccable grammar and style.
+    7. Pay special attention to the "Applications and Games" section in the resume. Ensure that the list under this section is highlighted and mentioned prominently in both the resume and the cover letter.
+    8. Ensure all summaries and descriptions are written in the first person with impeccable grammar and style.
     """
 
     user_message = f"""
@@ -44,6 +45,9 @@ def analyze_resume_and_job(resume, job_description):
     [Summarized relevant work experience 2]
 
     [Summarized relevant work experience 3]
+
+    APPLICATIONS AND GAMES:
+    [Summarized applications and games information]
 
     COVER LETTER INFO:
     Full Name: [Extracted full name]
@@ -77,6 +81,7 @@ def process_gpt_output(output):
         'SUMMARY:',
         'EDUCATION:',
         'RELEVANT WORK EXPERIENCE:',
+        'APPLICATIONS AND GAMES:',
         'COVER LETTER INFO:'
     ]
     
@@ -112,10 +117,11 @@ def process_gpt_output(output):
         sections.get('SUMMARY', '').strip(),
         sections.get('EDUCATION', '').strip(),
         sections.get('RELEVANT WORK EXPERIENCE', '').strip(),
+        sections.get('APPLICATIONS AND GAMES', '').strip(),
         cover_letter_info
     )
 
-def generate_full_resume(header, summary, education, work_experience):
+def generate_full_resume(header, summary, education, work_experience, applications_and_games):
     full_resume = f"""
 {header}
 
@@ -127,10 +133,13 @@ EDUCATION
 
 RELEVANT WORK EXPERIENCE
 {work_experience}
+
+APPLICATIONS AND GAMES
+{applications_and_games}
 """
     return full_resume.strip()
 
-def generate_cover_letter(resume, job_description, cover_letter_info):
+def generate_cover_letter(resume, job_description, cover_letter_info, applications_and_games):
     today = date.today().strftime("%B %d, %Y")
 
     system_message = """
@@ -140,6 +149,7 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
     3. Be concise, typically not exceeding one page, while maintaining depth and clarity.
     4. Encourage the employer to review the attached resume and consider the candidate for an interview.
     5. Use a first-person narrative, referring to the candidate directly with impeccable grammar and style.
+    6. Specifically mention and highlight the "Applications and Games" section from the candidate's resume to showcase relevant projects and achievements.
     """
 
     user_message = f"""
@@ -157,6 +167,9 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
 
     Job Description:
     {job_description}
+
+    Applications and Games:
+    {applications_and_games}
 
     Provide only the body of the cover letter, without any salutation or closing.
     """
@@ -179,7 +192,10 @@ def generate_cover_letter(resume, job_description, cover_letter_info):
 
     # Format the cover letter with the correct header, date, and salutation
     formatted_cover_letter = f"""\
-{cover_letter_info.get('Full Name', '')}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+{cover_letter_info.get('Full Name', '')}
+{cover_letter_info.get('Address', '')}
+{cover_letter_info.get('Phone', '')}
+{cover_letter_info.get('Email', '')}
 
 {today}
 
@@ -264,7 +280,7 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         pdf.set_auto_page_break(auto=True, margin=15)
 
         # Split content into main sections
-        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE)', content)
+        main_sections = re.split(r'\n\n(?=SUMMARY|EDUCATION|RELEVANT WORK EXPERIENCE|APPLICATIONS AND GAMES)', content)
 
         if not main_sections:
             print("No content to add to the PDF.")
@@ -320,6 +336,13 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
                     exp = exp.strip()
                     if exp:
                         pdf.add_bullet_point(exp)
+            elif section.startswith("APPLICATIONS AND GAMES"):
+                pdf.chapter_title("APPLICATIONS AND GAMES")
+                applications_text = section.split('\n', 1)[1].strip().split('\n')
+                for app in applications_text:
+                    app = app.strip()
+                    if app:
+                        pdf.add_bullet_point(app)
 
     # Handle PDF Output
     if filename_or_buffer is not None:
@@ -330,3 +353,4 @@ def create_pdf(content, filename_or_buffer, is_cover_letter=False):
         else:
             # Assume it's a filename
             pdf.output(filename_or_buffer)
+
